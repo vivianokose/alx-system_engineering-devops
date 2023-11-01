@@ -41,7 +41,3 @@ bash tests/test_script.sh
 ```
 
 Ensure you are in the project's root directory when executing the command.
-
-## Contributing
-
-Contributions to the project are welcome! If you find any issues or have suggestions for improvements, please create a pull request or submit an issue on the GitHub repository.
