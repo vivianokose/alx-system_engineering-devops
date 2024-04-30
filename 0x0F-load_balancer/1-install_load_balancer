@@ -1,32 +1,44 @@
 #!/usr/bin/env bash
-# Create a script to install and configure HAProxy on lb-01 server
-# Configure HAProxy to send traffic to web-01 and web-02 servers
-# Distribute requests using a roundrobin algorithm
-# Make sure that HAProxy can be managed via an init script
+# Installs and configures HAproxy sever
+# with two webs ervers uses roundrobin for load balancing among both servers
 
-# Install and configure HAproxy on my lb-01 server.
-sudo apt-get -y update
-apt-get -y install haproxy
+#Installation
+if ! dpkg -l | grep -q "haproxy";
+then
+    if ! apt-get update;
+    then
+	printf "Failed to Update package list\nExit. . ."
+        exit 1;
+    fi
+    if ! apt-get install haproxy -y;
+    then
+        printf "Failed to install HAproxy\nExiting . . ."
+	exit 1
+    fi
+fi
 
-# edit config file
-server_config=\
-"
-frontend  besthor_frontend
-        bind *:80
-        mode http
-        default_backend besthor_backend
-backend besthor_backend
-        balance roundrobin
-        server 176572-web-01 54.165.168.252:80 check
-        server 176572-web-02 34.237.91.136:80 check
-"
-echo "$server_config" | sudo tee -a /etc/haproxy/haproxy.cfg
+# Configuration
 
-# enable haproxy to be started by init script
-echo "ENABLED=1" | sudo tee -a /etc/default/haproxy
+if ! [ -e /etc/haproxy/haproxy.cfg.original ];
+then
+	echo "Backing up original configuration file"
+	sudo cp /etc/haproxy/haproxy.cfg /etc/haproxy/haproxy.cfg.original
+else
+	sudo cp /etc/haproxy/haproxy.cfg.original /etc/haproxy/haproxy.cfg
+fi
 
-# Testing the HAproxy configuration file
-sudo haproxy -c -f /etc/haproxy/haproxy.cfg
+if [ -e /etc/haproxy/haproxy.cfg ];
+then
+	sudo tee /etc/haproxy/haproxy.cfg > /dev/null << EOF
+frontend front
+	bind *:80
+	default_backend back
 
-# Restart the Nginx service
+backend back
+	balance roundrobin
+	server 165958-web-01 52.90.14.216:80 check
+	server 165958-web-02 52.91.120.69:80 check
+EOF
 sudo service haproxy restart
+echo "Configuration Done!"
+fi
